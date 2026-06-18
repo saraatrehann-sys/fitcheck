@@ -1,0 +1,6 @@
+{
+  "name": "Campus Fit Check",
+  "description": "A daily outfit community for UCLA students to share campus style and unlock a curated feed of campus trends.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}

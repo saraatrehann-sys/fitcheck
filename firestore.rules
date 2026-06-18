@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Default Deny Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Hardened Global Helpers ---
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // --- Entity Validation Blueprints ---
+
+    function isValidWaitlist(data) {
+      return data.fullName is string && data.fullName.size() <= 100
+        && data.uclaEmail is string && data.uclaEmail.size() <= 100 && data.uclaEmail.matches('^.+@.*ucla\\.edu$')
+        && data.wouldPost in ['Yes', 'Maybe', 'No']
+        && data.visibilityPreference in ['Public', 'Anonymous']
+        && (data.socialHandle == null || (data.socialHandle is string && data.socialHandle.size() <= 50))
+        && data.usagePurpose is list
+        && data.createdAt == request.time;
+    }
+
+    function isValidSubmission(data) {
+      return data.userId == request.auth.uid
+        && data.displayAs in ['Full name', 'First name only', 'Anonymous Bruin']
+        && data.occasion is string && data.occasion.size() <= 100
+        && data.location is string && data.location.size() <= 100
+        && data.brands is list && data.brands.size() <= 5
+        && data.photoUrl is string && data.photoUrl.size() <= 1500000
+        && data.upvotes is int && data.upvotes == 0
+        && data.reactions is map && data.reactions.size() == 0
+        && data.createdAt == request.time;
+    }
+
+    function isValidFeedback(data) {
+      return data.downloadLikelihood in ['Yes', 'Maybe', 'No']
+        && data.createdAt == request.time;
+    }
+
+    // --- Collection Routes ---
+
+    match /waitlist/{entryId} {
+      allow create: if isSignedIn() && isValidWaitlist(incoming()) && incoming().keys().hasAll(['fullName', 'uclaEmail', 'wouldPost', 'visibilityPreference', 'usagePurpose', 'createdAt']);
+      allow get: if isSignedIn() && isOwner(incoming().userId); // Simplified for waitlist
+    }
+
+    match /submissions/{submissionId} {
+      allow create: if isSignedIn() 
+        && isValidId(submissionId)
+        && isValidSubmission(incoming()) 
+        && incoming().keys().hasAll(['userId', 'displayAs', 'occasion', 'location', 'brands', 'photoUrl', 'createdAt', 'upvotes', 'reactions'])
+        && incoming().keys().size() == 9;
+      allow read: if isSignedIn(); // Social feed is viewable by all signed in UCLA students
+      allow update: if isSignedIn() && isOwner(existing().userId) && (
+        // Action: Upvote (Simplified, real apps use a subcollection for votes)
+        (incoming().diff(existing()).affectedKeys().hasOnly(['upvotes', 'reactions']))
+      );
+      allow delete: if isSignedIn() && isOwner(existing().userId);
+    }
+
+    match /feedback/{feedbackId} {
+      allow create: if isSignedIn() && isValidFeedback(incoming());
+    }
+  }
+}

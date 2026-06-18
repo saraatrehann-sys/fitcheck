@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "waitlist": {
+      "title": "Waitlist Entry",
+      "description": "Information about students who signed up for the UCLA beta.",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string" },
+        "uclaEmail": { "type": "string" },
+        "socialHandle": { "type": "string" },
+        "wouldPost": { "type": "string", "enum": ["Yes", "Maybe", "No"] },
+        "visibilityPreference": { "type": "string", "enum": ["Public", "Anonymous"] },
+        "usagePurpose": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fullName", "uclaEmail", "wouldPost", "visibilityPreference"]
+    },
+    "submission": {
+      "title": "Outfit Submission",
+      "description": "Daily outfit photo and details submitted by a user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayAs": { "type": "string", "enum": ["Full name", "First name only", "Anonymous Bruin"] },
+        "occasion": { "type": "string" },
+        "location": { "type": "string" },
+        "brands": { "type": "array" },
+        "photoUrl": { "type": "string" },
+        "upvotes": { "type": "number" },
+        "reactions": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "displayAs", "occasion", "location", "photoUrl", "createdAt", "upvotes", "reactions"]
+    },
+    "feedback": {
+      "title": "App Feedback",
+      "description": "Feedback from users about the UCLA beta experience.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "downloadLikelihood": { "type": "string", "enum": ["Yes", "Maybe", "No"] },
+        "postingFrequency": { "type": "string" },
+        "anonymousPreference": { "type": "boolean" },
+        "inviteFriend": { "type": "boolean" },
+        "comfortFactors": { "type": "string" },
+        "topFeature": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["downloadLikelihood", "createdAt"]
+    }
+  },
+  "firestore": {
+    "waitlist": {
+      "schema": "waitlist",
+      "description": "Students waiting for beta access."
+    },
+    "submissions": {
+      "schema": "submission",
+      "description": "Daily outfit submissions from UCLA students."
+    },
+    "feedback": {
+      "schema": "feedback",
+      "description": "User feedback for the beta."
+    }
+  }
+}
